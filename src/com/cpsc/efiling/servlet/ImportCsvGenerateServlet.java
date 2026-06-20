@@ -1,6 +1,8 @@
 package com.cpsc.efiling.servlet;
 
 import com.cpsc.efiling.service.CpscImportCsvService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -18,6 +20,8 @@ import java.io.InputStream;
 )
 public class ImportCsvGenerateServlet extends HttpServlet {
 
+    private static final Logger log = LogManager.getLogger(ImportCsvGenerateServlet.class);
+
     private final CpscImportCsvService service = new CpscImportCsvService();
 
     @Override
@@ -29,6 +33,7 @@ public class ImportCsvGenerateServlet extends HttpServlet {
         response.setContentType("application/json;charset=UTF-8");
 
         try {
+            log.info("收到Import CSV生成请求。remoteAddr={}", request.getRemoteAddr());
             String certifierId = request.getParameter("certifierId");
             String collectionId = request.getParameter("collectionId");
             Part excelPart = request.getPart("excelFile");
@@ -46,6 +51,8 @@ public class ImportCsvGenerateServlet extends HttpServlet {
             }
 
             String originalFileName = getSubmittedFileName(excelPart);
+            log.info("上传文件信息。originalFileName={}, size={} bytes, certifierId={}, collectionId={}",
+                    originalFileName, excelPart.getSize(), certifierId, collectionId);
 
             File outputDir = new File(getServletContext().getRealPath("/generated-import-csv"));
 
@@ -72,9 +79,11 @@ public class ImportCsvGenerateServlet extends HttpServlet {
                     + "\"rowCount\":" + result.getRowCount()
                     + "}";
 
+            log.info("请求处理成功。fileName={}, batchId={}, rowCount={}", result.getFileName(), result.getBatchId(), result.getRowCount());
             response.getWriter().write(json);
 
         } catch (Exception e) {
+            log.error("Import CSV生成失败。message={}", e.getMessage(), e);
             response.setStatus(400);
 
             String json = "{"

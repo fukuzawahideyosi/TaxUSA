@@ -6,7 +6,12 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class CpscEfilingDbUtil {
+
+    private static final Logger log = LogManager.getLogger(CpscEfilingDbUtil.class);
 
     private static final Properties PROPERTIES = new Properties();
 
@@ -20,8 +25,10 @@ public class CpscEfilingDbUtil {
             }
 
             PROPERTIES.load(in);
+            log.info("db.properties加载成功。db.url={}", PROPERTIES.getProperty("db.url"));
 
             Class.forName("com.mysql.cj.jdbc.Driver");
+            log.info("MySQL JDBC Driver加载成功。");
         } catch (Exception e) {
             throw new RuntimeException("初始化数据库配置失败：" + e.getMessage(), e);
         }
@@ -32,6 +39,7 @@ public class CpscEfilingDbUtil {
         String user = PROPERTIES.getProperty("db.user");
         String password = PROPERTIES.getProperty("db.password");
 
+        log.debug("获取数据库连接。url={}, user={}", url, user);
         return DriverManager.getConnection(url, user, password);
     }
 }

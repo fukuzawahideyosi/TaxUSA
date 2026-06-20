@@ -1,6 +1,8 @@
 package com.cpsc.efiling.service;
 
 import com.cpsc.efiling.util.CpscEfilingDbUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.*;
 
 import java.io.*;
@@ -10,6 +12,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class CpscImportCsvService {
+
+    private static final Logger log = LogManager.getLogger(CpscImportCsvService.class);
 
     /**
      * CPSC Import CSV 官方字段顺序。
@@ -113,11 +117,15 @@ public class CpscImportCsvService {
             File outputDir
     ) throws Exception {
 
+        log.info("开始处理客户Excel。originalFileName={}, certifierId={}, collectionId={}, outputDir={}",
+                originalFileName, certifierId, collectionId, outputDir == null ? null : outputDir.getAbsolutePath());
+
         if (!outputDir.exists() && !outputDir.mkdirs()) {
             throw new IOException("无法创建输出目录：" + outputDir.getAbsolutePath());
         }
 
         List<Map<String, String>> rows = readExcelRows(excelInputStream);
+        log.info("Excel读取完成，可导出数据行数={}", rows.size());
 
         if (rows.isEmpty()) {
             throw new IllegalArgumentException("Excel 中没有可导出的数据行。请从第10行开始填写客户数据。");
@@ -125,14 +133,17 @@ public class CpscImportCsvService {
 
         List<String> errors = validateRows(rows);
         if (!errors.isEmpty()) {
+            log.warn("数据校验失败，错误数量={}，错误内容=\n{}", errors.size(), String.join("\n", errors));
             throw new IllegalArgumentException(String.join("\n", errors));
         }
+        log.info("数据校验通过。准备生成CSV。rowCount={}", rows.size());
 
         String timeSuffix = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date());
         String fileName = "CPSC_IMPORT_" + timeSuffix + ".csv";
         File csvFile = new File(outputDir, fileName);
 
         writeCsv(rows, csvFile);
+        log.info("CSV生成成功。fileName={}, absolutePath={}, rowCount={}", fileName, csvFile.getAbsolutePath(), rows.size());
 
         long batchId = saveCsvRecordToDb(
                 certifierId,
@@ -149,6 +160,7 @@ public class CpscImportCsvService {
         result.setRowCount(rows.size());
         result.setFile(csvFile);
 
+        log.info("处理完成。batchId={}, fileName={}, rowCount={}", batchId, fileName, rows.size());
         return result;
     }
 
@@ -165,15 +177,20 @@ public class CpscImportCsvService {
         List<Map<String, String>> result = new ArrayList<>();
 
         try (Workbook workbook = WorkbookFactory.create(excelInputStream)) {
+            log.debug("Workbook读取成功。sheetCount={}", workbook.getNumberOfSheets());
             Sheet sheet = workbook.getSheet("01_客户填写数据");
             if (sheet == null) {
                 sheet = workbook.getSheetAt(0);
+                log.warn("未找到 01_客户填写数据，改用第一个Sheet：{}", sheet.getSheetName());
+            } else {
+                log.debug("使用Sheet：{}", sheet.getSheetName());
             }
 
             FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
             DataFormatter formatter = new DataFormatter(Locale.US);
 
             int headerRowIndex = findHeaderRow(sheet, formatter, evaluator);
+            log.debug("识别到官方英文表头行：Excel第{}行", headerRowIndex < 0 ? -1 : headerRowIndex + 1);
             if (headerRowIndex < 0) {
                 throw new IllegalArgumentException("找不到官方英文字段表头行。请确认 Excel 中包含 Product Update、Primary Product ID、Certificate Type 等字段。");
             }
@@ -190,11 +207,14 @@ public class CpscImportCsvService {
                 }
             }
 
+            log.debug("表头字段映射数量={}，字段映射={}", columnFieldMap.size(), columnFieldMap);
+
             if (!columnFieldMap.containsValue("Primary Product ID")) {
                 throw new IllegalArgumentException("表头中缺少 Primary Product ID。");
             }
 
             int dataStartRowIndex = findDataStartRow(sheet, headerRowIndex + 1, columnFieldMap, formatter, evaluator);
+            log.debug("识别到客户数据开始行：Excel第{}行", dataStartRowIndex + 1);
 
             for (int i = dataStartRowIndex; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
@@ -231,6 +251,17 @@ public class CpscImportCsvService {
                 normalizeInputValues(data);
                 applyDefaultValues(data);
                 data.put("_excelRowNo", String.valueOf(i + 1));
+                log.debug("读取Excel第{}行：ProductUpdate={}, Version={}, ProductID={}, ProductName={}, CertificateType={}, ManufactureDate={}, LastTestDate={}, ManufacturerAltId={}, LabAltId={}",
+                        i + 1,
+                        data.get("Product Update"),
+                        data.get("New Version ID"),
+                        data.get("Primary Product ID"),
+                        data.get("Product Name (Model)"),
+                        data.get("Certificate Type"),
+                        data.get("Manufacture Date"),
+                        data.get("Last Test Date"),
+                        data.get("Manufacturer Alternate ID"),
+                        data.get("Lab 1 Alternate ID"));
                 result.add(data);
             }
         }
@@ -455,6 +486,12 @@ public class CpscImportCsvService {
             row.put("Model Number", productId);
         }
 
+        if (isBlank(row.get("Product Name (Model)")) && !isBlank(productId)) {
+            String fallbackName = productId;
+            log.warn("Product Name (Model)为空，已临时用 Primary Product ID 作为产品名称。excelRow={}, productId={}", row.get("_excelRowNo"), productId);
+            row.put("Product Name (Model)", fallbackName);
+        }
+
         if (!isBlank(row.get("Lot Number"))) {
             putDefault(row, "Lot Number Assigned By", "Manufacturer");
         }
@@ -594,6 +631,7 @@ public class CpscImportCsvService {
     }
 
     private List<String> validateRows(List<Map<String, String>> rows) {
+        log.debug("开始校验数据。rowCount={}", rows.size());
         List<String> errors = new ArrayList<>();
 
         for (Map<String, String> row : rows) {
@@ -676,6 +714,7 @@ public class CpscImportCsvService {
             }
         }
 
+        log.debug("数据校验结束。errorCount={}", errors.size());
         return errors;
     }
 
@@ -702,6 +741,7 @@ public class CpscImportCsvService {
     }
 
     private void writeCsv(List<Map<String, String>> rows, File csvFile) throws IOException {
+        log.debug("开始写CSV。file={}, rowCount={}, headerCount={}", csvFile.getAbsolutePath(), rows.size(), IMPORT_HEADERS.size());
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(csvFile), StandardCharsets.UTF_8)) {
             writeCsvLine(writer, IMPORT_HEADERS);
 
@@ -755,6 +795,7 @@ public class CpscImportCsvService {
             int rowCount
     ) throws SQLException, IOException {
 
+        log.debug("准备保存CSV生成记录到数据库。certifierId={}, collectionId={}, file={}, rowCount={}", certifierId, collectionId, generatedFileName, rowCount);
         String csvText = readFile(csvFile);
 
         String sql = "INSERT INTO CPSC_eFiling_import_batch "
@@ -772,6 +813,7 @@ public class CpscImportCsvService {
             ps.setString(6, "Excel文件 " + originalFileName + " 已生成 Import CSV：" + generatedFileName);
 
             int count = ps.executeUpdate();
+            log.debug("数据库插入执行完成。affectedRows={}", count);
             if (count == 0) {
                 throw new SQLException("数据库未插入任何记录。");
             }
