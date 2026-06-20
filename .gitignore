@@ -1,0 +1,12 @@
+# 忽略 目录
+#/WebContent/WEB-INF/lib/chrome-win64-138.0.7204.183/
+chrome-win64*/
+*.dll
+target/
+build/
+.settings/
+.classpath
+.project
+.factorypath
+.vs/
+*.log
