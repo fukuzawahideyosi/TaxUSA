@@ -305,7 +305,7 @@ String domain = url.getHost();
 String ProjectName ="";
 
 if (domain.contains("127.0.0.1")) {
-	ProjectName ="/PandaServiceMA";
+	ProjectName ="/TaxUSA";
 }
 
 String URL = "";

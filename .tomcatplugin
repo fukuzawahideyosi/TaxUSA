@@ -9,5 +9,5 @@
     <warLocation></warLocation>
     <extraInfo></extraInfo>
     <mavenClasspath>false</mavenClasspath>
-    <webPath>PandaServiceMA</webPath>
+    <webPath>TaxUSA</webPath>
 </tomcatProjectProperties>
