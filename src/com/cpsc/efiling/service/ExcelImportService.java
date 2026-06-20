@@ -1,5 +1,7 @@
 package com.cpsc.efiling.service;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import com.cpsc.efiling.model.*;
 import com.cpsc.efiling.util.DbUtil;
 import com.cpsc.efiling.util.StringUtil;
@@ -8,10 +10,12 @@ import java.io.File;
 import java.sql.*;
 
 public class ExcelImportService {
+    private static final Logger log = LogManager.getLogger(ExcelImportService.class);
     private final ExcelReadService excelReadService = new ExcelReadService();
     private final CpscImportJsonBuilder jsonBuilder = new CpscImportJsonBuilder();
 
     public ImportResult importExcel(File excelFile, String certifierId, String collectionId, boolean doCertify) throws Exception {
+        log.info("importExcel开始。file={}, certifierId={}, collectionId={}, doCertify={}", excelFile, certifierId, collectionId, doCertify);
         ImportData importData = excelReadService.read(excelFile);
         String requestJson = jsonBuilder.buildJson(importData);
 
@@ -37,8 +41,10 @@ public class ExcelImportService {
                 }
 
                 connection.commit();
+                log.info("importExcel完成。batchId={}, productCount={}", batchId, importData.getProducts().size());
                 return new ImportResult(batchId, importData.getProducts().size(), requestJson);
             } catch (Exception e) {
+                log.error("importExcel失败，准备回滚。message={}", e.getMessage(), e);
                 connection.rollback();
                 throw e;
             } finally {

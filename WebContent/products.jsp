@@ -21,7 +21,10 @@
     <h1>CPSC eFiling 数据库数据查看与 API 参数校验</h1>
     <p>页面从 MySQL 读取已导入的数据，并根据 CPSC /import 字段限制进行检测；异常项用红色显示。</p>
     <div class="nav">
+    <!--
         <a href="<%=request.getContextPath()%>/index.jsp">上传Excel</a>
+     -->
+        <a href="<%=request.getContextPath()%>/importCsv.jsp">客户收集数据 Excel → CPSC Import CSV</a>
         <a href="<%=request.getContextPath()%>/products">查看全部数据</a>
     </div>
 </div>

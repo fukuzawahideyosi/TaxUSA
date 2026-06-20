@@ -1,6 +1,9 @@
 package com.cpsc.efiling.model;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 public class BatchView {
+    private static final Logger log = LogManager.getLogger(BatchView.class);
     private long id;
     private String certifierId;
     private String collectionId;

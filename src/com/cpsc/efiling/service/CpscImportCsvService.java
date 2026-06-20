@@ -15,6 +15,8 @@ public class CpscImportCsvService {
 
     private static final Logger log = LogManager.getLogger(CpscImportCsvService.class);
 
+    private final CpscCsvExcelDbSaveService dbSaveService = new CpscCsvExcelDbSaveService();
+
     /**
      * CPSC Import CSV 官方字段顺序。
      * 生成 CSV 时必须按这个顺序输出。
@@ -145,13 +147,13 @@ public class CpscImportCsvService {
         writeCsv(rows, csvFile);
         log.info("CSV生成成功。fileName={}, absolutePath={}, rowCount={}", fileName, csvFile.getAbsolutePath(), rows.size());
 
-        long batchId = saveCsvRecordToDb(
+        long batchId = dbSaveService.saveCsvAndProductDetails(
                 certifierId,
                 collectionId,
                 originalFileName,
                 fileName,
                 csvFile,
-                rows.size()
+                rows
         );
 
         GenerateResult result = new GenerateResult();
@@ -248,9 +250,9 @@ public class CpscImportCsvService {
                     continue;
                 }
 
+                data.put("_excelRowNo", String.valueOf(i + 1));
                 normalizeInputValues(data);
                 applyDefaultValues(data);
-                data.put("_excelRowNo", String.valueOf(i + 1));
                 log.debug("读取Excel第{}行：ProductUpdate={}, Version={}, ProductID={}, ProductName={}, CertificateType={}, ManufactureDate={}, LastTestDate={}, ManufacturerAltId={}, LabAltId={}",
                         i + 1,
                         data.get("Product Update"),
@@ -829,9 +831,15 @@ public class CpscImportCsvService {
     }
 
     private String readFile(File file) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buf = new byte[8192];
         try (InputStream in = new FileInputStream(file)) {
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            int len;
+            while ((len = in.read(buf)) >= 0) {
+                out.write(buf, 0, len);
+            }
         }
+        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 
     public static class GenerateResult {

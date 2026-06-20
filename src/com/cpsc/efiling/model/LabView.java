@@ -1,6 +1,9 @@
 package com.cpsc.efiling.model;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 public class LabView {
+    private static final Logger log = LogManager.getLogger(LabView.class);
     private long productLabId;
     private String labAlternateId;
     private String labName;

@@ -1,9 +1,12 @@
 package com.cpsc.efiling.model;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ProductData {
+    private static final Logger log = LogManager.getLogger(ProductData.class);
     private String productUpdate;
     private String versionId;
     private String versionIdToUpdate;

@@ -3,14 +3,18 @@ package com.cpsc.efiling.service;
 import com.cpsc.efiling.model.*;
 import com.cpsc.efiling.util.DbUtil;
 import com.cpsc.efiling.util.StringUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.sql.*;
 import java.util.*;
 
 public class ProductQueryService {
+    private static final Logger log = LogManager.getLogger(ProductQueryService.class);
     private final ApiValidationService validationService = new ApiValidationService();
 
     public List<ProductView> listProducts(Long batchId) throws SQLException {
+        log.info("查询产品明细开始。batchId={}", batchId);
         Map<Long, ProductView> map = new LinkedHashMap<Long, ProductView>();
 
         StringBuilder sql = new StringBuilder();
@@ -27,6 +31,7 @@ public class ProductQueryService {
 
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            log.debug("产品明细SQL：{}", sql.toString());
             if (batchId != null) {
                 ps.setLong(1, batchId);
             }
@@ -81,10 +86,12 @@ public class ProductQueryService {
             }
         }
 
+        log.info("查询产品明细结束。batchId={}, count={}", batchId, map.size());
         return new ArrayList<ProductView>(map.values());
     }
 
     public List<BatchView> listBatches() throws SQLException {
+        log.info("查询导入批次开始。 ");
         List<BatchView> list = new ArrayList<BatchView>();
         String sql = "SELECT b.id, b.certifier_id, b.collection_id, b.import_id, b.import_status, b.status_message, " +
                 "DATE_FORMAT(b.created_at, '%Y-%m-%d %H:%i:%s') AS created_at, COUNT(i.id) AS product_count " +
@@ -108,12 +115,14 @@ public class ProductQueryService {
                 list.add(b);
             }
         }
+        log.info("查询导入批次结束。count={}", list.size());
         return list;
     }
 
     private void loadLabs(Map<Long, ProductView> products) throws SQLException {
         String ids = joinIds(products.keySet());
         if (StringUtil.isBlank(ids)) return;
+        log.debug("加载实验室明细。productIds={}", ids);
         String sql = "SELECT pl.id AS product_lab_id, pl.product_certificate_id, l.alternate_id, l.name, l.type, l.cpsc_id, " +
                 "pl.test_report_id, pl.test_url, pl.is_component, pl.component_description, " +
                 "GROUP_CONCAT(c.citation_code ORDER BY c.citation_code SEPARATOR ', ') AS citation_codes " +
@@ -149,6 +158,7 @@ public class ProductQueryService {
     private void loadExemptions(Map<Long, ProductView> products) throws SQLException {
         String ids = joinIds(products.keySet());
         if (StringUtil.isBlank(ids)) return;
+        log.debug("加载豁免明细。productIds={}", ids);
         String sql = "SELECT product_certificate_id, exemption_code FROM CPSC_eFiling_product_exemption WHERE product_certificate_id IN (" + ids + ") ORDER BY id";
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);

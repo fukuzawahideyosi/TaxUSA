@@ -1,6 +1,9 @@
 package com.cpsc.efiling.model;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 public class PocData {
+    private static final Logger log = LogManager.getLogger(PocData.class);
     private String pocCode;
     private String isNew;
     private String type;

@@ -1,5 +1,7 @@
 package com.cpsc.efiling.service;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import com.cpsc.efiling.model.*;
 import com.cpsc.efiling.util.StringUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +11,7 @@ import java.io.File;
 import java.util.*;
 
 public class CpscImportJsonBuilder {
+    private static final Logger log = LogManager.getLogger(CpscImportJsonBuilder.class);
 
     /**
      * 兼容你前面提到的方法名：直接从 Excel 文件生成 /import JSON。

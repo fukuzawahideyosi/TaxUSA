@@ -1,20 +1,32 @@
 package com.cpsc.efiling.service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.cpsc.efiling.model.LabView;
 import com.cpsc.efiling.model.ProductView;
 import com.cpsc.efiling.model.ValidationError;
 import com.cpsc.efiling.util.StringUtil;
 
-import java.util.*;
-import java.util.regex.Pattern;
-
 public class ApiValidationService {
+    private static final Logger log = LogManager.getLogger(ApiValidationService.class);
     private static final Pattern MONTH_YEAR = Pattern.compile("^(0[1-9]|1[0-2])/[0-9]{4}$");
     private static final Pattern DATE = Pattern.compile("^(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])/[0-9]{4}$");
     private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     private static final Set<String> PRODUCT_ID_TYPES = new HashSet<String>(Arrays.asList(
-            "GTIN", "UPC", "SKU", "Model #", "Serial #", "Registered #", "Alternate ID"
+            "GTIN", "UPC", "SKU",
+            "Model #", "Model Number",
+            "Serial #", "Serial Number",
+            "Registered #", "Registered Number",
+            "Alternate ID", "Alternate Identifier"
     ));
     private static final Set<String> CERT_TYPES = new HashSet<String>(Arrays.asList("GCC", "CPC"));
     private static final Set<String> LOT_ASSIGNED_BY = new HashSet<String>(Arrays.asList("Manufacturer", "Seller"));
@@ -22,12 +34,13 @@ public class ApiValidationService {
     private static final Set<String> POC_TYPES = new HashSet<String>(Arrays.asList("Importer", "Manufacturer", "Laboratory", "Broker", "Other"));
 
     public List<ValidationError> validate(ProductView p) {
+        log.debug("开始校验产品。productId={}, versionId={}", p == null ? null : p.getPrimaryProductId(), p == null ? null : p.getVersionId());
         List<ValidationError> errors = new ArrayList<ValidationError>();
 
         required(errors, "coreProduct.versionId", p.getVersionId(), 19, "证书版本号必填，最长19字符。 ");
         required(errors, "coreProduct.primaryProductId", p.getPrimaryProductId(), 19, "产品唯一ID必填，最长19字符。 ");
         required(errors, "coreProduct.primaryProductIdType", p.getPrimaryProductIdType(), 30, "产品ID类型必填。 ");
-        enumValue(errors, "coreProduct.primaryProductIdType", p.getPrimaryProductIdType(), PRODUCT_ID_TYPES, "产品ID类型只能是 GTIN、UPC、SKU、Model #、Serial #、Registered #、Alternate ID。 ");
+        enumValue(errors, "coreProduct.primaryProductIdType", p.getPrimaryProductIdType(), PRODUCT_ID_TYPES, "产品ID类型只能是 GTIN、UPC、SKU、Model #/Model Number、Serial #/Serial Number、Registered #/Registered Number、Alternate ID/Alternate Identifier。 ");
         required(errors, "coreProduct.certificateType", p.getCertificateType(), 10, "证书类型必填。 ");
         enumValue(errors, "coreProduct.certificateType", p.getCertificateType(), CERT_TYPES, "证书类型只能是 GCC 或 CPC。 ");
         required(errors, "coreProduct.name", p.getName(), 250, "产品名称必填，最长250字符。 ");
@@ -94,6 +107,7 @@ public class ApiValidationService {
             pattern(errors, "coreProduct.poc.email", p.getPocEmail(), EMAIL, "POC邮箱格式不正确。 ");
         }
 
+        log.debug("产品校验结束。productId={}, errorCount={}", p == null ? null : p.getPrimaryProductId(), errors.size());
         return errors;
     }
 

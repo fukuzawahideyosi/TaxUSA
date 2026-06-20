@@ -159,10 +159,37 @@
             color: #17265f;
         }
 
+
+		.bottom-image-card {
+		    text-align: left;
+		}
+
+		.bottom-image-title {
+		    text-align: left !important;
+		    margin-left: 0;
+		}
+
+        .bottom-page-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 6px 16px rgba(18, 38, 63, .12);
+        }
+
         .red {
             color: red;
             font-weight: 700;
         }
+
+        .template-download-card {
+            text-align: left;
+        }
+
+        .template-download-title {
+            text-align: left !important;
+            margin-left: 0;
+        }
+
     </style>
 </head>
 <body>
@@ -173,14 +200,27 @@
 </div>
 
 <div class="container">
+
+    <div class="card template-download-card">
+        <h2 class="template-download-title">客户收集数据 Excel 模板下载地址</h2>
+        <p class="hint">
+            请先下载客户收集数据模板，填写完成后再在本页面上传，系统会自动生成 CPSC Import 用 CSV。
+        </p>
+        <a class="download"
+           href="<%=request.getContextPath()%>/template/CPSC_eFiling_信息收集表csv用.xlsx"
+           download>
+            下载客户收集数据 Excel 模板
+        </a>
+    </div>
+
     <div class="card">
         <h2>客户收集数据 Excel → CPSC Import CSV</h2>
 
         <form id="uploadForm" method="post" enctype="multipart/form-data"
               action="<%=request.getContextPath()%>/import-csv-generate">
 
-            <div class="form-row">
-                <div class="form-group">
+            <div class="form-row" style="display:none;">
+                <div class="form-group" >
                     <label>Certifier ID（认证主体ID）</label>
                     <input type="text" name="certifierId" placeholder="例如 ForeverCo.,Ltd." required value="ForeverCo.,Ltd.">
                 </div>
@@ -236,6 +276,13 @@
                 <td class="red">如果字段缺失、日期格式不对、必填项为空，后台会返回错误信息</td>
             </tr>
         </table>
+    </div>
+
+    <div class="card bottom-image-card">
+        <h2>CPSC eFILING CSV导入方法</h2>
+        <img class="bottom-page-image"
+             src="<%=request.getContextPath()%>/img/6a2c4877-f461-49cb-a6ba-f8c22aaab6ba.png"
+             alt="页面底部图片">
     </div>
 </div>
 

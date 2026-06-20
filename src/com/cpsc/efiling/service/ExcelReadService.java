@@ -1,5 +1,7 @@
 package com.cpsc.efiling.service;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import com.cpsc.efiling.model.*;
 import com.cpsc.efiling.util.StringUtil;
 import org.apache.poi.ss.usermodel.*;
@@ -10,6 +12,7 @@ import java.io.InputStream;
 import java.util.*;
 
 public class ExcelReadService {
+    private static final Logger log = LogManager.getLogger(ExcelReadService.class);
     private static final int API_HEADER_ROW_INDEX = 3;   // Excel 第4行是 API字段路径
     private static final int DATA_START_ROW_INDEX = 5;   // Excel 第6行开始是数据
 
@@ -96,6 +99,7 @@ public class ExcelReadService {
                 throw new IllegalArgumentException("Excel 中没有可导入的产品数据。请检查 01_产品基本信息 第6行以后是否填写了产品唯一ID。 ");
             }
 
+            log.info("ExcelReadService读取完成。productCount={}", importData.getProducts().size());
             return importData;
         }
     }

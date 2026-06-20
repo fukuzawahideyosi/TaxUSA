@@ -1,6 +1,9 @@
 package com.cpsc.efiling.model;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 public class ManufacturerData {
+    private static final Logger log = LogManager.getLogger(ManufacturerData.class);
     private String alternateId;
     private String isNew;
     private String gln;
